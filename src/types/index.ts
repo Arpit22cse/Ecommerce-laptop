@@ -37,3 +37,34 @@ export interface FilterOptions {
   ram: string[];
   processors: string[];
 }
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'customer';
+  status: 'active' | 'blocked';
+  joinDate: string;
+  totalOrders: number;
+}
+
+export interface Order {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  items: CartItem[];
+  total: number;
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  orderDate: string;
+  shippingAddress: string;
+}
+
+export interface DashboardStats {
+  totalSales: number;
+  totalOrders: number;
+  totalProducts: number;
+  totalUsers: number;
+  recentOrders: Order[];
+  salesGrowth: number;
+  ordersGrowth: number;
+}
