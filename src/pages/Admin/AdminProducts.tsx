@@ -5,6 +5,7 @@ import { useAdmin } from '../../context/AdminContext';
 import ProductModal from '../../components/Admin/ProductModal';
 import { Laptop } from '../../types';
 import toast from 'react-hot-toast';
+import { adminApi } from '../../types/api';
 
 const AdminProducts: React.FC = () => {
   const { laptops, addLaptop, updateLaptop, deleteLaptop } = useAdmin();
@@ -42,15 +43,26 @@ const AdminProducts: React.FC = () => {
     }
   };
 
-  const handleSaveProduct = (laptop: Laptop) => {
-    if (modalMode === 'add') {
-      addLaptop(laptop);
-      toast.success('Product added successfully!');
-    } else {
-      updateLaptop(laptop);
-      toast.success('Product updated successfully!');
-    }
-  };
+    const handleSaveProduct = (laptop: Laptop, images?: File[]) => {
+        if (modalMode === 'add') {
+            addLaptop(laptop);
+            adminApi.addLaptop(laptop, images)
+                .then(response => {
+                    if (!response.error) {
+                        toast.success('Product added successfully!');
+                    } else {
+                        toast.error(response.message || 'Failed to add product');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error adding product:', error);
+                    toast.error('Failed to add product');
+                });
+        } else {
+            updateLaptop(laptop);
+            toast.success('Product updated successfully!');
+        }
+    };
 
   return (
     <div className="min-h-screen bg-gray-50">

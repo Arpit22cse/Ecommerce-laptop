@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, Upload } from 'lucide-react';
+import { X, Save, Upload, Trash2 } from 'lucide-react';
 import { Laptop } from '../../types';
 
 interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (laptop: Laptop) => void;
+  onSave: (laptop: Laptop, images: File[]) => void; // Modified to accept images
   laptop?: Laptop;
   mode: 'add' | 'edit';
 }
@@ -36,27 +36,21 @@ const ProductModal: React.FC<ProductModalProps> = ({
     features: []
   });
 
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (laptop && mode === 'edit') {
       setFormData(laptop);
+      setSelectedImages([]);
     } else {
       setFormData({
-        name: '',
-        brand: '',
-        processor: '',
-        ram: '',
-        storage: '',
-        graphics: '',
-        display: '',
-        price: 0,
-        originalPrice: 0,
-        image: '',
-        images: [],
-        rating: 4.5,
-        reviews: 0,
-        description: '',
-        features: []
+        name: '', brand: '', processor: '', ram: '', storage: '',
+        graphics: '', display: '', price: 0, originalPrice: 0,
+        image: '', images: [], rating: 4.5, reviews: 0,
+        description: '', features: []
       });
+      setSelectedImages([]);
     }
   }, [laptop, mode, isOpen]);
 
@@ -75,14 +69,14 @@ const ProductModal: React.FC<ProductModalProps> = ({
       price: formData.price || 0,
       originalPrice: formData.originalPrice,
       image: formData.image || 'https://images.pexels.com/photos/205421/pexels-photo-205421.jpeg?auto=compress&cs=tinysrgb&w=800',
-      images: formData.images || [formData.image || 'https://images.pexels.com/photos/205421/pexels-photo-205421.jpeg?auto=compress&cs=tinysrgb&w=800'],
+      images: formData.images || [],
       rating: formData.rating || 4.5,
       reviews: formData.reviews || 0,
       description: formData.description || '',
       features: formData.features || []
     };
 
-    onSave(laptopData);
+    onSave(laptopData, selectedImages); // Pass laptop data and image files
     onClose();
   };
 
@@ -93,6 +87,18 @@ const ProductModal: React.FC<ProductModalProps> = ({
   const handleFeaturesChange = (features: string) => {
     const featuresArray = features.split('\n').filter(f => f.trim());
     setFormData(prev => ({ ...prev, features: featuresArray }));
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      const fileArray = Array.from(files).slice(0, 5);
+      setSelectedImages(prev => [...prev, ...fileArray].slice(0, 5));
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -193,16 +199,41 @@ const ProductModal: React.FC<ProductModalProps> = ({
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Image URL
+                  {/* Image Upload Section */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Product Images (up to 5)
                     </label>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedImages.map((image, index) => (
+                        <div key={index} className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-200">
+                          <img src={URL.createObjectURL(image)} alt={`Product ${index}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-80 hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                      {selectedImages.length < 5 && (
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="w-24 h-24 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-500 hover:text-blue-500 transition-colors"
+                        >
+                          <Upload className="h-6 w-6" />
+                        </button>
+                      )}
+                    </div>
                     <input
-                      type="url"
-                      value={formData.image}
-                      onChange={(e) => handleInputChange('image', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="https://example.com/image.jpg"
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImageUpload}
+                      multiple
+                      accept="image/*"
+                      style={{ display: 'none' }}
                     />
                   </div>
                 </div>
